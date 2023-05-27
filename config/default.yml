@@ -1,0 +1,12 @@
+consumer:
+  max_retry_count: 3
+connection:
+  port: 3000
+  rabbitMQ: amqp://user:password@localhost:5672
+  # mongoDB: mongodb://user:password@example_mongodb:27017/database?authSource=admin&retryWrites=true&w=majority
+logger:
+  console:
+    level: debug
+  file:
+    level: error
+  silent: false

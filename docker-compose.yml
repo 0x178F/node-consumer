@@ -1,0 +1,17 @@
+version: '3'
+services:
+  consumer_app:
+    container_name: consumerApp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./src:/app/src
+      - node_modules:/app/node_modules
+    stop_grace_period: 10m
+
+volumes:
+  node_modules:

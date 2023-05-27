@@ -1,0 +1,5 @@
+consumer:
+  max_retry_count: 5
+connection:
+  port: 3001
+  rabbitMQ: amqp://user:password@rabbitmq_container:5672
