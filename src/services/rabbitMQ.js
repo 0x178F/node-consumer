@@ -3,6 +3,7 @@ import RabbitMQ from '../loaders/amqp';
 import logger from '../utils/logger';
 
 const MAX_RETRY_COUNT = config.get('consumer.max_retry_count');
+const PREFETCH = config.get('consumer.prefetch');
 
 /**
  * Publishes a message to a RabbitMQ queue.
@@ -11,13 +12,13 @@ const MAX_RETRY_COUNT = config.get('consumer.max_retry_count');
  * @param {string} message - The message to be published.
  * @returns {Promise<void>} A Promise that resolves when the message is published.
  */
-const publishToQueue = async (queue, message) => {
+const publishToQueue = async (queue, message, opts) => {
   let channel;
   try {
     channel = await RabbitMQ.connection.createChannel();
 
     await channel.assertQueue(queue);
-    channel.sendToQueue(queue, Buffer.from(message));
+    channel.sendToQueue(queue, Buffer.from(message), opts);
 
     logger.info(`[RabbitMQ]: Message added to queue ${message}`);
   } catch (err) {
@@ -40,6 +41,7 @@ const consumeToQueue = async (queue, func) => {
   let channel;
   try {
     channel = await RabbitMQ.connection.createChannel();
+    channel.prefetch(PREFETCH);
     RabbitMQ.channels.push(channel);
 
     await channel.assertQueue(queue);
@@ -54,13 +56,13 @@ const consumeToQueue = async (queue, func) => {
 
         if (retryCount > MAX_RETRY_COUNT) {
           logger.error(`[RabbitMQ]: Message rejected from queue ${queue} after ${MAX_RETRY_COUNT} retries.`);
-          channel.sendToQueue('errorQueue', msg.content, {
+          await publishToQueue(`${queue}_ERRORS`, msg.content, {
             headers: {
               'x-retry-count': retryCount,
             },
           });
         } else {
-          logger.error(`[RabbitMQ]: Message requeued to ${queue}.`);
+          logger.error(`[RabbitMQ]: Error: ${err.message}. Message requeued to ${queue}.`);
           channel.sendToQueue(queue, msg.content, {
             headers: {
               'x-retry-count': retryCount,

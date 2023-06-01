@@ -1,5 +1,6 @@
 consumer:
   max_retry_count: 3
+  prefetch: 1
 connection:
   port: 3000
   rabbitMQ: amqp://user:password@localhost:5672
