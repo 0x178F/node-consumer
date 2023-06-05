@@ -11,9 +11,8 @@ import logger from '../utils/logger';
  * @returns {Promise<void>} A Promise that resolves when the message is published.
  */
 const publishToQueue = async (queue, message, opts) => {
-  let channel;
   try {
-    channel = await RabbitMQ.connection.createChannel();
+    const channel = RabbitMQ.channel;
 
     await channel.assertQueue(queue);
     channel.sendToQueue(queue, Buffer.from(message), opts);
@@ -21,10 +20,6 @@ const publishToQueue = async (queue, message, opts) => {
     logger.info(`[RabbitMQ]: Message added to queue: ${queue}`);
   } catch (err) {
     logger.error('[RabbitMQ]:', err.message);
-  } finally {
-    if (channel) {
-      await channel.close();
-    }
   }
 };
 
@@ -39,7 +34,7 @@ const publishToQueue = async (queue, message, opts) => {
 const publishDelayedMessage = async (queue, message, opts) => {
   const delay_time = config.get('consumer.delay_time');
 
-  const channel = await RabbitMQ.connection.createChannel();
+  const channel = RabbitMQ.channel;
 
   const DELAY_QUEUE_NAME = `${queue}_delayed`;
   const AFTER_DELAY_QUEUE = queue;
@@ -53,8 +48,6 @@ const publishDelayedMessage = async (queue, message, opts) => {
   await channel.assertQueue(AFTER_DELAY_QUEUE);
 
   channel.sendToQueue(DELAY_QUEUE_NAME, Buffer.from(message), { ...opts, persistent: true, expiration: TTL });
-
-  await channel.close();
 };
 
 /**
@@ -69,13 +62,10 @@ const consumeToQueue = async (queue, func) => {
   const prefetch_count = config.get('consumer.prefetch');
   const delay_time = config.get('consumer.delay_time');
 
-  let channel;
-
   try {
-    channel = await RabbitMQ.connection.createChannel();
+    const channel = RabbitMQ.channel;
     // The most optimal prefetch should be calculated and configured for each queue according to its specific characteristics.
     channel.prefetch(prefetch_count);
-    RabbitMQ.channels.push(channel);
 
     await channel.assertQueue(queue);
     logger.info(`[RabbitMQ]: Waiting for messages in ${queue}.`);

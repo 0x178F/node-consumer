@@ -21,11 +21,10 @@ class AmqpConnect {
     this.connection = null;
 
     /**
-     * These channels are used to sequentially check.
-     * if there are any pending messages in the queues during a graceful shutdown process.
-     * @type {Array}
+     * @type {import('amqplib').Channel | null}
+     *  RabbitMQ recommends using a single channel per thread as best practice.
      */
-    this.channels = [];
+    this.channel = null;
   }
 
   /**
@@ -38,11 +37,15 @@ class AmqpConnect {
   async connect() {
     try {
       const conn = await amqplib.connect(this.rabbitmqURL);
+
       conn.on('close', () => {
         logger.info('[RabbitMQ]: reconnecting!');
         setTimeout(this.connect.bind(this), 3000);
       });
+
       logger.info('[RabbitMQ]: Connected!');
+
+      this.channel = await conn.createChannel();
       this.connection = conn;
     } catch (err) {
       if (!this.isExpectedError(err)) {
@@ -70,12 +73,10 @@ class AmqpConnect {
 
       while (true) {
         for (const queue of queues) {
-          const channel = await connection.createChannel();
-          const queueInfo = await channel.assertQueue(queue);
-
+          const queueInfo = await this.channel.assertQueue(queue);
           const totalQueueMessage = queueInfo.messageCount;
+
           logger.info(`[RabbitMQ]: ${totalQueueMessage} messages left in the ${queue} queue`);
-          await channel.close();
 
           if (totalQueueMessage > 0) {
             hasMessages = true;
@@ -90,10 +91,10 @@ class AmqpConnect {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-      const closeChannels = this.channels.map((ch) => ch.close());
-      await Promise.all(closeChannels);
-      await connection.close();
       
+      await this.channel.close();
+      await connection.close();
+
       logger.info('[RabbitMQ]: connection closed.');
     } catch (err) {
       if (!this.isExpectedError(err)) {
