@@ -90,11 +90,10 @@ class AmqpConnect {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-      const closeConsumerChannels = this.channels.map((ch) => ch.close());
-      const closeConnection = connection.close();
-
-      await Promise.all([closeConsumerChannels, closeConnection]);
-
+      const closeChannels = this.channels.map((ch) => ch.close());
+      await Promise.all(closeChannels);
+      await connection.close();
+      
       logger.info('[RabbitMQ]: connection closed.');
     } catch (err) {
       if (!this.isExpectedError(err)) {

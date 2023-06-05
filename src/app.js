@@ -9,7 +9,7 @@ import QUEUES from './enums/queues';
 await loaders();
 
 const app = Express();
-const port = config.get('connection.port');
+const port = config.get('connection.port') || 3000;
 
 const server = app.listen(port, () => {
   logger.info(`[Express]: Server listening at http://localhost:${port}!`);

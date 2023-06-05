@@ -49,6 +49,7 @@ When the project is successfully started, it starts consuming messages from Rabb
 ### **Features**
 
 - **Message Consumption**: Connects to RabbitMQ and consumes messages from queues.
+- **Delayed Message Publishing** : Publishes delayed messages to a RabbitMQ queue and republishes them to the specified queue after a configurable delay.
 - **Error Handling**: In case of an error, messages can be retried a specified number of times according to the configuration. When the retry limit is exceeded, faulty messages are added to the error queue.
 - **Graceful Shutdown**: Can be gracefully terminated, allowing the current processes to complete and handle the messages waiting to be consumed from RabbitMQ.
 - **Health Check**: Can check the health status of the application and determine if the project is healthy.
