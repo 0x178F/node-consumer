@@ -71,7 +71,8 @@ class AmqpConnect {
 
       let hasMessages = false;
 
-      while (true) {
+      const waitForPendingMessages = config.get('consumer.waitForPendingMessages')
+      while (waitForPendingMessages) {
         for (const queue of queues) {
           const queueInfo = await this.channel.assertQueue(queue);
           const totalQueueMessage = queueInfo.messageCount;
